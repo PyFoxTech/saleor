@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from saleor.extensions import ConfigurationTypeField
 from saleor.extensions.base_plugin import BasePlugin
 
-from . import GatewayConfig, capture, process_payment, refund
+from . import GatewayConfig, capture, process_payment, refund, create_order_id
 
 GATEWAY_NAME = "Razorpay"
 
@@ -95,3 +95,9 @@ class RazorpayGatewayPlugin(BasePlugin):
     def get_payment_config(self, previous_value):
         config = self._get_gateway_config()
         return [{"field": "api_key", "value": config.connection_params["public_key"]}]
+
+    @require_active_plugin
+    def create_order_id(self, payment_information: "PaymentData") -> "GatewayResponse":
+        return create_order_id(payment_information, self._get_gateway_config())
+
+

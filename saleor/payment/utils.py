@@ -1,20 +1,22 @@
+import ast
 import json
 import logging
 from decimal import Decimal
-from typing import Dict
+from typing import Dict, Optional
 
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import transaction
 
+from . import ChargeStatus, GatewayError, PaymentError, TransactionKind
+from .error_codes import PaymentErrorCode
+from .gateways.razorpay.plugin import RazorpayGatewayPlugin
+from .interface import AddressData, GatewayResponse, PaymentData
+from .models import Payment, Transaction
 from ..account.models import User
 from ..checkout.models import Checkout
 from ..order.actions import handle_fully_paid_order
 from ..order.models import Order
-from . import ChargeStatus, GatewayError, PaymentError, TransactionKind
-from .error_codes import PaymentErrorCode
-from .interface import AddressData, GatewayResponse, PaymentData
-from .models import Payment, Transaction
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +25,11 @@ ALLOWED_GATEWAY_KINDS = {choices[0] for choices in TransactionKind.CHOICES}
 
 
 def create_payment_information(
-    payment: Payment,
-    payment_token: str = None,
-    amount: Decimal = None,
-    customer_id: str = None,
-    store_source: bool = False,
+        payment: Payment,
+        payment_token: str = None,
+        amount: Decimal = None,
+        customer_id: str = None,
+        store_source: bool = False,
 ) -> PaymentData:
     """Extract order information along with payment details.
 
@@ -62,16 +64,31 @@ def create_payment_information(
     )
 
 
+def create_razorpay_order(payment: Payment):
+    if payment.gateway == 'Razorpay' and not payment.token.startswith('order_'):
+        last_transaction: Optional[Transaction] = payment.transactions.filter(
+            kind=TransactionKind.CAPTURE).last()
+
+        if payment.can_authorize() and not last_transaction:
+            gateway = RazorpayGatewayPlugin()
+            payment_data = create_payment_information(
+                payment=payment, payment_token=payment.token, store_source=False
+            )
+            response = gateway.create_order_id(payment_data)
+            payment.token = response.transaction_id
+            payment.save()
+
+
 def create_payment(
-    gateway: str,
-    total: Decimal,
-    currency: str,
-    email: str,
-    customer_ip_address: str = "",
-    payment_token: str = "",
-    extra_data: Dict = None,
-    checkout: Checkout = None,
-    order: Order = None,
+        gateway: str,
+        total: Decimal,
+        currency: str,
+        email: str,
+        customer_ip_address: str = "",
+        payment_token: str = "",
+        extra_data: Dict = None,
+        checkout: Checkout = None,
+        order: Order = None,
 ) -> Payment:
     """Create a payment instance.
 
@@ -121,16 +138,17 @@ def create_payment(
     }
 
     payment, _ = Payment.objects.get_or_create(defaults=defaults, **data)
+    create_razorpay_order(payment)
     return payment
 
 
 def create_transaction(
-    payment: Payment,
-    kind: str,
-    payment_information: PaymentData,
-    action_required: bool = False,
-    gateway_response: GatewayResponse = None,
-    error_msg=None,
+        payment: Payment,
+        kind: str,
+        payment_information: PaymentData,
+        action_required: bool = False,
+        gateway_response: GatewayResponse = None,
+        error_msg=None,
 ) -> Transaction:
     """Create a transaction based on transaction kind and gateway response."""
     # Default values for token, amount, currency are only used in cases where

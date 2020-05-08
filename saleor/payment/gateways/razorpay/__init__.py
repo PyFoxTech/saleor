@@ -12,6 +12,8 @@ from . import errors
 from .utils import get_amount_for_razorpay, get_error_response
 
 # The list of currencies supported by razorpay
+from ...models import Payment
+
 SUPPORTED_CURRENCIES = ("INR",)
 
 # Define what are the razorpay exceptions,
@@ -28,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 def _generate_response(
-    payment_information: PaymentData, kind: str, data: Dict
+        payment_information: PaymentData, kind: str, data: Dict
 ) -> GatewayResponse:
     """Generate Saleor transaction information from the payload or from passed data."""
     return GatewayResponse(
@@ -81,6 +83,20 @@ def get_client_token(**_):
     return str(uuid.uuid4())
 
 
+def _get_latest_uncaptured_authorized_payment_id_for_order(
+        razorpay_client: razorpay.Client,
+        order_id: str):
+    response = razorpay_client.order.payments(order_id)
+    payments = response['items']
+    uncaptured_authorized_payments = list(filter(
+        lambda p: p.get('status') == 'authorized' and p.get('captured') is False,
+        payments))
+    try:
+        return uncaptured_authorized_payments[0].get('id')
+    except IndexError:
+        return 'unknown'
+
+
 def capture(payment_information: PaymentData, config: GatewayConfig) -> GatewayResponse:
     """Capture a authorized payment using the razorpay client.
 
@@ -96,9 +112,14 @@ def capture(payment_information: PaymentData, config: GatewayConfig) -> GatewayR
 
     if not error:
         try:
+            payment_id = _get_latest_uncaptured_authorized_payment_id_for_order(
+                razorpay_client,
+                payment_information.token)
+
             response = razorpay_client.payment.capture(
-                payment_information.token, razorpay_amount
+                payment_id, razorpay_amount
             )
+
             clean_razorpay_response(response)
         except RAZORPAY_EXCEPTIONS as exc:
             error = get_error_message_from_razorpay_error(exc)
@@ -152,6 +173,44 @@ def refund(payment_information: PaymentData, config: GatewayConfig) -> GatewayRe
 
 
 def process_payment(
-    payment_information: PaymentData, config: GatewayConfig
+        payment_information: PaymentData, config: GatewayConfig
 ) -> GatewayResponse:
     return capture(payment_information=payment_information, config=config)
+
+
+def create_order_id(payment_information: PaymentData,
+                    config: GatewayConfig) -> GatewayResponse:
+    """Capture a authorized payment using the razorpay client.
+
+    But it first check if the given payment instance is supported
+    by the gateway.
+
+    If an error from Razorpay occurs, we flag the transaction as failed and return
+    a short user friendly description of the error after logging the error to stderr.
+    """
+    error = check_payment_supported(payment_information=payment_information)
+    razorpay_client = get_client(**config.connection_params)
+    razorpay_amount = get_amount_for_razorpay(payment_information.amount)
+
+    if not error:
+        try:
+            response = razorpay_client.order.create(
+                data=dict(receipt=payment_information.token, amount=razorpay_amount,
+                          currency='INR', payment_capture='0')
+            )
+            clean_razorpay_response(response)
+        except RAZORPAY_EXCEPTIONS as exc:
+            error = get_error_message_from_razorpay_error(exc)
+            response = get_error_response(
+                payment_information.amount, error=error, id=payment_information.token
+            )
+    else:
+        response = get_error_response(
+            payment_information.amount, error=error, id=payment_information.token
+        )
+
+    return _generate_response(
+        payment_information=payment_information,
+        kind=TransactionKind.CAPTURE,
+        data=response,
+    )

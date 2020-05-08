@@ -37,7 +37,7 @@ ROOT_URLCONF = "saleor.urls"
 WSGI_APPLICATION = "saleor.wsgi.application"
 
 ADMINS = (
-    # ('Your Name', 'your_email@example.com'),
+    ('Pankaj Kumar Singh', 'pankaj.singh+saleor-prod@go4life.in'),
 )
 MANAGERS = ADMINS
 
@@ -63,7 +63,7 @@ DATABASES = {
 }
 
 
-TIME_ZONE = "America/Chicago"
+TIME_ZONE = "Asia/Kolkata"
 LANGUAGE_CODE = "en"
 LANGUAGES = [
     ("ar", "Arabic"),
@@ -232,6 +232,7 @@ INSTALLED_APPS = [
     "saleor.warehouse",
     "saleor.webhook",
     "saleor.wishlist",
+    "saleor.wallet",
     # External apps
     "versatileimagefield",
     "django_measurement",
@@ -508,13 +509,14 @@ GRAPHENE = {
 EXTENSIONS_MANAGER = "saleor.extensions.manager.ExtensionsManager"
 
 PLUGINS = [
-    "saleor.extensions.plugins.avatax.plugin.AvataxPlugin",
-    "saleor.extensions.plugins.vatlayer.plugin.VatlayerPlugin",
+    # "saleor.extensions.plugins.avatax.plugin.AvataxPlugin",
+    # "saleor.extensions.plugins.vatlayer.plugin.VatlayerPlugin",
     "saleor.extensions.plugins.webhook.plugin.WebhookPlugin",
-    "saleor.payment.gateways.dummy.plugin.DummyGatewayPlugin",
-    "saleor.payment.gateways.stripe.plugin.StripeGatewayPlugin",
-    "saleor.payment.gateways.braintree.plugin.BraintreeGatewayPlugin",
+    # "saleor.payment.gateways.dummy.plugin.DummyGatewayPlugin",
+    # "saleor.payment.gateways.stripe.plugin.StripeGatewayPlugin",
+    # "saleor.payment.gateways.braintree.plugin.BraintreeGatewayPlugin",
     "saleor.payment.gateways.razorpay.plugin.RazorpayGatewayPlugin",
+    "saleor.payment.gateways.wallet.plugin.WalletGatewayPlugin",
 ]
 
 if (

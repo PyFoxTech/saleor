@@ -1,9 +1,8 @@
 from datetime import datetime
 
 from dateutil.rrule import rrule, rrulestr
-from dateutil.parser import parse
 
-from business_rules import (
+from .utils import (
     get_order_creation_date_from_expected_delivery_date,
     is_user_trusted
     )

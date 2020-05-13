@@ -55,6 +55,8 @@ class SitePermissions(BasePermissionEnum):
     MANAGE_SETTINGS = "site.manage_settings"
     MANAGE_TRANSLATIONS = "site.manage_translations"
 
+class SubscriptionPermissions(BasePermissionEnum):
+    MANAGE_SUBSCRIPTIONS = "subscription.manage_subscriptions"
 
 class WebhookPermissions(BasePermissionEnum):
     MANAGE_WEBHOOKS = "webhook.manage_webhooks"
@@ -71,6 +73,7 @@ PERMISSIONS_ENUMS = [
     ProductPermissions,
     ShippingPermissions,
     SitePermissions,
+    SubscriptionPermissions,
     WebhookPermissions,
     CheckoutPermissions,
 ]

@@ -1,6 +1,4 @@
 import django_filters
-from django.db.models import Sum
-
 from ...subscription.models import Subscription
 from ..core.filters import ListObjectTypeFilter, ObjectTypeFilter
 from ..core.types.common import DateRangeInput
@@ -40,8 +38,8 @@ def filter_start_date_range(qs, _, value):
     return qs
 
 
-def filter_order_search(qs, _, value):
-    order_fields = [
+def filter_subscription_search(qs, _, value):
+    subscription_fields = [
         "pk",
         "user_email",
         "user__first_name",
@@ -49,27 +47,17 @@ def filter_order_search(qs, _, value):
         "product_name",
         "variant_name",
     ]
-    qs = filter_by_query_param(qs, value, order_fields)
+    qs = filter_by_query_param(qs, value, subscription_fields)
     return qs
 
 
-class DraftSubscriptionFilter(django_filters.FilterSet):
-    customer = django_filters.CharFilter(method=filter_customer)
-    created = ObjectTypeFilter(input_class=DateRangeInput, method=filter_created_range)
-    search = django_filters.CharFilter(method=filter_order_search)
-
-    class Meta:
-        model = Subscription
-        fields = ["customer", "created", "search"]
-
-
-class SubscriptionFilter(DraftSubscriptionFilter):
+class SubscriptionFilter(django_filters.FilterSet):
     status = ListObjectTypeFilter(input_class=SubscriptionStatusFilter, method=filter_status)
     customer = django_filters.CharFilter(method=filter_customer)
     created = ObjectTypeFilter(input_class=DateRangeInput, method=filter_created_range)
     start_date = ObjectTypeFilter(input_class=DateRangeInput, method=filter_start_date_range)
-    search = django_filters.CharFilter(method=filter_order_search)
+    search = django_filters.CharFilter(method=filter_subscription_search)
 
     class Meta:
         model = Subscription
-        fields = ["payment_status", "status", "customer", "created", "search"]
+        fields = ["status", "customer", "created", "start_date", "search"]

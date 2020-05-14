@@ -90,6 +90,20 @@ class Subscription(ModelWithMetadata):
     def get_rrule_str(self):
         return self.rrule_str
 
+    def can_create_order(self):
+        if self.status == SubscriptionStatus.ACTIVE:
+            return True
+        return False
+
+    def can_update_upcoming_order_details(self):
+        rule = self.rrule_str
+        try:
+            rule_obj = rrulestr(rule)
+            return True
+        except Exception as e:
+            raise e
+        return False
+
     def get_customer_email(self):
         return self.user.email if self.user else self.user_email
 

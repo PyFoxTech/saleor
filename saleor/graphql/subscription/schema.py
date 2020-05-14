@@ -6,155 +6,105 @@ from ..core.fields import FilterInputConnectionField, PrefetchingConnectionField
 from ..core.types import FilterInputObjectType, TaxedMoney
 from ..decorators import permission_required
 from .enums import SubscriptionStatusFilter
-from .filters import DraftOrderFilter, OrderFilter
-from .mutations.draft_orders import (
-    DraftOrderComplete,
-    DraftOrderCreate,
-    DraftOrderDelete,
-    DraftOrderUpdate,
-)
-from .mutations.orders import (
-    OrderAddNote,
-    OrderCancel,
-    OrderCapture,
-    OrderClearMeta,
-    OrderClearPrivateMeta,
-    OrderMarkAsPaid,
-    OrderRefund,
-    OrderUpdate,
-    OrderUpdateMeta,
-    OrderUpdatePrivateMeta,
-    OrderUpdateShipping,
-    OrderVoid,
+from .filters import DraftSubscriptionFilter, SubscriptionFilter
+from .mutations.subscriptions import (
+    SubscriptionAddNote,
+    SubscriptionPause,
+    SubscriptionActivate,
+    SubscriptionEnd,
+    SubscriptionClearMeta,
+    SubscriptionClearPrivateMeta,
+    SubscriptionUpdate,
+    SubscriptionUpdateMeta,
+    SubscriptionUpdatePrivateMeta,
+    SubscriptionUpdateShipping,
+    SubscriptionVoid,
 )
 from .resolvers import (
-    resolve_draft_orders,
+    resolve_subscription,
+    resolve_subscriptions,
     resolve_homepage_events,
-    resolve_order,
-    resolve_order_by_token,
-    resolve_orders,
-    resolve_orders_total,
+    resolve_subscription_by_token,
 )
-from .sorters import OrderSortingInput
-from .types import Order, OrderEvent
+from .sorters import SubscriptionSortingInput
+from .types import Subscription, SubscriptionEvent
 
 
-class OrderFilterInput(FilterInputObjectType):
+class SubscriptionFilterInput(FilterInputObjectType):
     class Meta:
-        filterset_class = OrderFilter
+        filterset_class = SubscriptionFilter
 
 
-class OrderDraftFilterInput(FilterInputObjectType):
-    class Meta:
-        filterset_class = DraftOrderFilter
-
-
-class OrderQueries(graphene.ObjectType):
+class SubscriptionQueries(graphene.ObjectType):
     homepage_events = PrefetchingConnectionField(
-        OrderEvent,
+        SubscriptionEvent,
         description=(
             "List of activity events to display on "
-            "homepage (at the moment it only contains order-events)."
+            "homepage (at the moment it only contains subscription-events)."
         ),
     )
-    order = graphene.Field(
-        Order,
-        description="Look up an order by ID.",
-        id=graphene.Argument(graphene.ID, description="ID of an order.", required=True),
+    subscription = graphene.Field(
+        Subscription,
+        description="Look up an subscription by ID.",
+        id=graphene.Argument(graphene.ID, description="ID of an subscription.", required=True),
     )
-    orders = FilterInputConnectionField(
-        Order,
-        sort_by=OrderSortingInput(description="Sort orders."),
-        filter=OrderFilterInput(description="Filtering options for orders."),
+    subscriptions = FilterInputConnectionField(
+        Subscription,
+        sort_by=SubscriptionSortingInput(description="Sort subscriptions."),
+        filter=SubscriptionFilterInput(description="Filtering options for subscriptions."),
         created=graphene.Argument(
             ReportingPeriod,
             description=(
-                "Filter orders from a selected timespan. "
+                "Filter subscriptions from a selected timespan. "
                 "DEPRECATED: Will be removed in Saleor 2.11, "
                 "use the `filter` field instead."
             ),
         ),
         status=graphene.Argument(
-            OrderStatusFilter,
+            SubscriptionStatusFilter,
             description=(
-                "Filter order by status. "
+                "Filter subscription by status. "
                 "DEPRECATED: Will be removed in Saleor 2.11, "
                 "use the `filter` field instead."
             ),
         ),
-        description="List of orders.",
+        description="List of subscriptions.",
     )
-    draft_orders = FilterInputConnectionField(
-        Order,
-        sort_by=OrderSortingInput(description="Sort draft orders."),
-        filter=OrderDraftFilterInput(description="Filtering options for draft orders."),
-        created=graphene.Argument(
-            ReportingPeriod,
-            description=(
-                "Filter draft orders from a selected timespan. "
-                "DEPRECATED: Will be removed in Saleor 2.11, "
-                "use the `filter` field instead."
-            ),
-        ),
-        description="List of draft orders.",
-    )
-    orders_total = graphene.Field(
-        TaxedMoney,
-        description="Return the total sales amount from a specific period.",
-        period=graphene.Argument(ReportingPeriod, description="A period of time."),
-    )
-    order_by_token = graphene.Field(
-        Order,
-        description="Look up an order by token.",
+    subscription_by_token = graphene.Field(
+        Subscription,
+        description="Look up an subscription by token.",
         token=graphene.Argument(
-            graphene.UUID, description="The order's token.", required=True
+            graphene.UUID, description="The subscription's token.", required=True
         ),
     )
 
-    @permission_required(OrderPermissions.MANAGE_ORDERS)
+    @permission_required(SubscriptionPermissions.MANAGE_SUBSCRIPTIONS)
     def resolve_homepage_events(self, *_args, **_kwargs):
         return resolve_homepage_events()
 
-    @permission_required(OrderPermissions.MANAGE_ORDERS)
-    def resolve_order(self, info, **data):
-        return resolve_order(info, data.get("id"))
+    @permission_required(SubscriptionPermissions.MANAGE_SUBSCRIPTIONS)
+    def resolve_subscription(self, info, **data):
+        return resolve_subscription(info, data.get("id"))
 
-    @permission_required(OrderPermissions.MANAGE_ORDERS)
-    def resolve_orders(
+    @permission_required(SubscriptionPermissions.MANAGE_SUBSCRIPTIONS)
+    def resolve_subscriptions(
         self, info, created=None, status=None, query=None, sort_by=None, **_kwargs
     ):
-        return resolve_orders(info, created, status, query, sort_by)
+        return resolve_subscriptions(info, created, status, query, sort_by)
 
-    @permission_required(OrderPermissions.MANAGE_ORDERS)
-    def resolve_draft_orders(
-        self, info, created=None, query=None, sort_by=None, **_kwargs
-    ):
-        return resolve_draft_orders(info, created, query, sort_by)
-
-    @permission_required(OrderPermissions.MANAGE_ORDERS)
-    def resolve_orders_total(self, info, period, **_kwargs):
-        return resolve_orders_total(info, period)
-
-    def resolve_order_by_token(self, _info, token):
-        return resolve_order_by_token(token)
+    def resolve_subscription_by_token(self, _info, token):
+        return resolve_subscription_by_token(token)
 
 
-class OrderMutations(graphene.ObjectType):
-    draft_order_complete = DraftOrderComplete.Field()
-    draft_order_create = DraftOrderCreate.Field()
-    draft_order_delete = DraftOrderDelete.Field()
-    draft_order_update = DraftOrderUpdate.Field()
-
-    order_add_note = OrderAddNote.Field()
-    order_cancel = OrderCancel.Field()
-    order_capture = OrderCapture.Field()
-    order_clear_private_meta = OrderClearPrivateMeta.Field()
-    order_clear_meta = OrderClearMeta.Field()
-    order_mark_as_paid = OrderMarkAsPaid.Field()
-    order_refund = OrderRefund.Field()
-    order_update = OrderUpdate.Field()
-    order_update_meta = OrderUpdateMeta.Field()
-    order_update_private_meta = OrderUpdatePrivateMeta.Field()
-    order_update_shipping = OrderUpdateShipping.Field()
-    order_void = OrderVoid.Field()
-
+class SubscriptionMutations(graphene.ObjectType):
+    subscription_add_note = SubscriptionAddNote.Field()
+    subscription_pause = SubscriptionPause.Field()
+    subscription_activate = SubscriptionActivate.Field()
+    subscription_end = SubscriptionEnd.Field()
+    subscription_clear_meta = SubscriptionClearMeta.Field()
+    subscription_clear_private_meta = SubscriptionClearPrivateMeta.Field()
+    subscription_update = SubscriptionUpdate.Field()
+    subscription_update_meta = SubscriptionUpdateMeta.Field()
+    subscription_update_private_meta = SubscriptionUpdatePrivateMeta.Field()
+    subscription_update_shipping = SubscriptionUpdateShipping.Field()
+    subscription_void = SubscriptionVoid.Field()

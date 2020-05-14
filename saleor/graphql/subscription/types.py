@@ -128,15 +128,10 @@ class Subscription(MetadataObjectType, CountableDjangoObjectType):
     @staticmethod
     def resolve_actions(root: models.Subscription, _info):
         actions = []
-        rule = root.get_rrule_str()
-        if root.can_capture(payment):
-            actions.append(SubscriptionAction.CAPTURE)
-        if root.can_mark_as_paid():
-            actions.append(SubscriptionAction.MARK_AS_PAID)
-        if root.can_refund(payment):
-            actions.append(SubscriptionAction.REFUND)
-        if root.can_void(payment):
-            actions.append(SubscriptionAction.VOID)
+        if root.can_create_order():
+            actions.append(SubscriptionAction.CREATE_ORDER)
+        if root.can_update_upcoming_order_details():
+            actions.append(SubscriptionAction.UPDATE_UPCOMING_ORDER_DETAILS)
         return actions
 
     @staticmethod

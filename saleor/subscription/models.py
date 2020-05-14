@@ -7,13 +7,12 @@ from django.contrib.postgres.fields import JSONField
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.timezone import now
-from django_prices.models import MoneyField, TaxedMoneyField
 
 from ..account.models import Address
 from ..core.models import ModelWithMetadata
 from ..core.permissions import SubscriptionPermissions
 from ..core.utils.json_serializer import CustomJsonEncoder
-from .utils import get_order_creation_date_from_expected_delivery_date
+from .utils import get_next_order_creation_date
 from . import SubscriptionStatus, SubscriptionEvents
 
 
@@ -31,13 +30,13 @@ class SubscriptionQueryset(models.QuerySet):
 
 
 class Subscription(ModelWithMetadata):
-    rrule_str = models.TextField()
+    rrule = models.TextField()
     start_date = models.DateTimeField()
     upcoming_order_creation_date = models.DateTimeField()
     upcoming_delivery_date = models.DateTimeField()
     created = models.DateTimeField(default=now, editable=False)
     status = models.CharField(
-        max_length=32, default=SubscriptionStatus.ACTIVE, choices=SubscriptionStatus.CHOICES
+        max_length=32, default=SubscriptionStatus.DRAFT, choices=SubscriptionStatus.CHOICES
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -62,7 +61,6 @@ class Subscription(ModelWithMetadata):
         blank=True,
         null=True,
     )
-    # max_length is as produced by ProductVariant's display_product method
     product_name = models.CharField(max_length=386)
     variant_name = models.CharField(max_length=255, default="", blank=True)
     quantity = models.IntegerField(validators=[MinValueValidator(1)])
@@ -87,37 +85,18 @@ class Subscription(ModelWithMetadata):
     def __str__(self):
         return "#%d" % (self.id,)
 
-    def get_rrule_str(self):
-        return self.rrule_str
-
-    def can_create_order(self):
-        if self.status == SubscriptionStatus.ACTIVE:
-            return True
-        return False
-
     def can_update_upcoming_order_details(self):
-        rule = self.rrule_str
+        can_update = False
         try:
-            rule_obj = rrulestr(rule)
-            return True
+            rule_obj = rrulestr(self.rrule)
+            if(self.start_date):
+                can_update = True
         except Exception as e:
             raise e
-        return False
+        return can_update
 
     def get_customer_email(self):
         return self.user.email if self.user else self.user_email
-
-    def _index_billing_phone(self):
-        return self.billing_address.phone
-
-    def _index_shipping_phone(self):
-        return self.shipping_address.phone
-
-    def get_upcoming_delivery_date(self):
-        return self.upcoming_delivery_date
-
-    def get_upcoming_order_creation_date(self):
-        return self.upcoming_order_creation_date
 
 
 class SubscriptionEvent(models.Model):
@@ -136,13 +115,13 @@ class SubscriptionEvent(models.Model):
             (type_name.upper(), type_name) for type_name, _ in SubscriptionEvents.CHOICES
         ],
     )
-    subscription = models.ForeignKey(Subscription, related_name="events", on_delete=models.CASCADE)
+    subscription = models.ForeignKey(Subscription, related_name="events", on_delete=models.PROTECT)
     parameters = JSONField(blank=True, default=dict, encoder=CustomJsonEncoder)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         blank=True,
         null=True,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         related_name="+",
     )
 

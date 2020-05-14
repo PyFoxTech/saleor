@@ -8,6 +8,13 @@ from . import SubscriptionEvents, SubscriptionEventsEmails
 
 UserType = User
 
+def subscription_draft_created_event(*, subscription: Subscription, user: UserType) -> SubscriptionEvent:
+    return SubscriptionEvent.objects.create(
+        subscription=subscription,
+        type=SubscriptionEvents.DRAFT_CREATED,
+        user=user,
+    )
+
 def subscription_activated_event(*, subscription: Subscription, user: UserType) -> SubscriptionEvent:
     return SubscriptionEvent.objects.create(
         subscription=subscription,
@@ -15,7 +22,7 @@ def subscription_activated_event(*, subscription: Subscription, user: UserType) 
         user=user,
     )
 
-def subscription_recurrence_rule_updated_event() -> SubscriptionEvent:
+def subscription_recurrence_rule_updated_event(*, subscription: Subscription, user: UserType) -> SubscriptionEvent:
     return SubscriptionEvent.objects.create(
         subscription=subscription,
         type=SubscriptionEvents.RECURRENCE_RULE_UPDATED,
@@ -23,7 +30,7 @@ def subscription_recurrence_rule_updated_event() -> SubscriptionEvent:
         parameters={}
     )
 
-def subscription_shipping_address_updated_event() -> SubscriptionEvent:
+def subscription_shipping_address_updated_event(*, subscription: Subscription, user: UserType) -> SubscriptionEvent:
     return SubscriptionEvent.objects.create(
         subscription=subscription,
         type=SubscriptionEvents.SHIPPING_ADDRESS_UPDATED,
@@ -31,7 +38,7 @@ def subscription_shipping_address_updated_event() -> SubscriptionEvent:
         parameters={}
     )
 
-def subscription_product_quantity_updated_event() -> SubscriptionEvent:
+def subscription_product_quantity_updated_event(*, subscription: Subscription, user: UserType) -> SubscriptionEvent:
     return SubscriptionEvent.objects.create(
         subscription=subscription,
         type=SubscriptionEvents.PRODUCT_QUANTITY_UPDATED,
@@ -40,57 +47,7 @@ def subscription_product_quantity_updated_event() -> SubscriptionEvent:
     )
 
 
-def subscription_order_draft_created_event() -> SubscriptionEvent:
-    return SubscriptionEvent.objects.create(
-        subscription=subscription,
-        type=SubscriptionEvents.UPCOMING_ORDER_DRAFT_CREATED,
-        user=user,
-        parameters={}
-    )
-
-
-def subscription_order_confirmed_event() -> SubscriptionEvent:
-    return SubscriptionEvent.objects.create(
-        subscription=subscription,
-        type=SubscriptionEvents.UPCOMING_ORDER_CONFIRMED,
-        user=user,
-        parameters={}
-    )
-
-def subscription_order_delivered_event() -> SubscriptionEvent:
-    return SubscriptionEvent.objects.create(
-        subscription=subscription,
-        type=SubscriptionEvents.LATEST_ORDER_DELIVERED,
-        user=user,
-        parameters={}
-    )
-
-def subscription_order_cancelled_event() -> SubscriptionEvent:
-    return SubscriptionEvent.objects.create(
-        subscription=subscription,
-        type=SubscriptionEvents.UPCOMING_ORDER_CANCELLED,
-        user=user,
-        parameters={}
-    )
-
-def upcoming_delivery_date_updated_event() -> SubscriptionEvent:
-    return SubscriptionEvent.objects.create(
-        subscription=subscription,
-        type=SubscriptionEvents.UPCOMING_DELIVERY_DATE_UPDATED,
-        user=user,
-        parameters={}
-    )
-
-def upcoming_order_creation_date_updated_event() -> SubscriptionEvent:
-    return SubscriptionEvent.objects.create(
-        subscription=subscription,
-        type=SubscriptionEvents.UPCOMING_ORDER_CREATION_DATE_UPDATED,
-        user=user,
-        parameters={}
-    )
-
-
-def subscription_paused_event() -> SubscriptionEvent:
+def subscription_paused_event(*, subscription: Subscription, user: UserType) -> SubscriptionEvent:
     return SubscriptionEvent.objects.create(
         subscription=subscription,
         type=SubscriptionEvents.PAUSED,
@@ -99,7 +56,7 @@ def subscription_paused_event() -> SubscriptionEvent:
     )
 
 
-def subscription_ended_event() -> SubscriptionEvent:
+def subscription_ended_event(*, subscription: Subscription, user: UserType) -> SubscriptionEvent:
     return SubscriptionEvent.objects.create(
         subscription=subscription,
         type=SubscriptionEvents.ENDED,
@@ -116,7 +73,7 @@ def order_note_added_event(*, subscription: Order, user: UserType, message: str)
             )
         kwargs["user"] = user
 
-    return OrderEvent.objects.create(
+    return SubscriptionEvent.objects.create(
         subscription=subscription,
         type=SubscriptionEvents.NOTE_ADDED,
         parameters={"message": message},

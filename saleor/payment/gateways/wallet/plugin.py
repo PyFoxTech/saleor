@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from saleor.extensions.base_plugin import BasePlugin
+from saleor.plugins.base_plugin import BasePlugin, ConfigurationTypeField
 from . import GatewayConfig, capture, process_payment, refund
 
 GATEWAY_NAME = "Wallet"
@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 class WalletGatewayPlugin(BasePlugin):
     PLUGIN_NAME = GATEWAY_NAME
+    PLUGIN_ID = "pyfox.payments.wallet"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

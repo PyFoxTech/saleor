@@ -512,7 +512,7 @@ PLUGINS = [
     # "saleor.plugins.avatax.plugin.AvataxPlugin",
     # "saleor.plugins.vatlayer.plugin.VatlayerPlugin",
     # "saleor.plugins.webhook.plugin.WebhookPlugin",
-    # "saleor.payment.gateways.dummy.plugin.DummyGatewayPlugin",
+    "saleor.payment.gateways.dummy.plugin.DummyGatewayPlugin",
     # "saleor.payment.gateways.stripe.plugin.StripeGatewayPlugin",
     # "saleor.payment.gateways.braintree.plugin.BraintreeGatewayPlugin",
     "saleor.payment.gateways.razorpay.plugin.RazorpayGatewayPlugin",

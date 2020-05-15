@@ -6,7 +6,7 @@ from .resolvers import resolve_wallets, resolve_wallet, resolve_wallet_recharge
 from .types import Wallet, WalletRecharge
 from ..checkout.types import PaymentGateway
 from ..core.fields import PrefetchingConnectionField
-from ...extensions.manager import get_extensions_manager
+from ...plugins.manager import get_plugins_manager
 
 
 class WalletQueries(graphene.ObjectType):
@@ -46,7 +46,7 @@ class WalletQueries(graphene.ObjectType):
     def resolve_wallet_recharge_available_payment_gateways(self, *_args, **_kwargs):
         available_payment_gateways = [
             gtw for gtw in
-            get_extensions_manager().list_payment_gateways() if
+            get_plugins_manager().list_payment_gateways() if
             gtw.get('name').strip().lower() != 'wallet']
         return available_payment_gateways
 

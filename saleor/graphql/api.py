@@ -15,6 +15,7 @@ from .plugins.schema import PluginsMutations, PluginsQueries
 from .product.schema import ProductMutations, ProductQueries
 from .shipping.schema import ShippingMutations, ShippingQueries
 from .shop.schema import ShopMutations, ShopQueries
+from .subscription.schema import SubscriptionMutations, SubscriptionQueries
 from .translations.schema import TranslationQueries
 from .wallet.schema import WalletQueries, WalletMutations
 from .warehouse.schema import StockQueries, WarehouseMutations, WarehouseQueries
@@ -38,6 +39,7 @@ class Query(
     ShippingQueries,
     ShopQueries,
     StockQueries,
+    SubscriptionQueries,
     TranslationQueries,
     WalletQueries,
     WarehouseQueries,
@@ -62,6 +64,7 @@ class Mutation(
     ProductMutations,
     ShippingMutations,
     ShopMutations,
+    SubscriptionMutations,
     WarehouseMutations,
     WebhookMutations,
     WishlistMutations,

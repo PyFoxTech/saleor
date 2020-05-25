@@ -237,6 +237,7 @@ INSTALLED_APPS = [
     "saleor.shipping",
     "saleor.search",
     "saleor.site",
+    "saleor.subscription",
     "saleor.data_feeds",
     "saleor.page",
     "saleor.payment",

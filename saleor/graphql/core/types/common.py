@@ -21,6 +21,7 @@ from ..enums import (
     ShippingErrorCode,
     ShopErrorCode,
     StockErrorCode,
+    SubscriptionErrorCode,
     TranslationErrorCode,
     WarehouseErrorCode,
     WebhookErrorCode,
@@ -192,6 +193,8 @@ class PluginError(Error):
 class StockError(Error):
     code = StockErrorCode(description="The error code.", required=True)
 
+class SubscriptionError(Error):
+    code = SubscriptionErrorCode(description="The error code.")
 
 class BulkStockError(ProductError):
     index = graphene.Int(

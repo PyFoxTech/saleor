@@ -9,8 +9,6 @@ from .resolvers import resolve_subscription, resolve_subscriptions, \
     resolve_subscription_by_token, resolve_draft_subscriptions
 from .types import Subscription
 from ..core.fields import FilterInputConnectionField
-from ..decorators import permission_required
-from ...core.permissions import SubscriptionPermissions
 
 
 class SubscriptionQueries(graphene.ObjectType):
@@ -39,15 +37,12 @@ class SubscriptionQueries(graphene.ObjectType):
         ),
     )
 
-    @permission_required(SubscriptionPermissions.MANAGE_SUBSCRIPTIONS)
     def resolve_subscription(self, info, **data):
         return resolve_subscription(info, data.get("id"))
 
-    @permission_required(SubscriptionPermissions.MANAGE_SUBSCRIPTIONS)
     def resolve_subscriptions(self, info, **_kwargs):
         return resolve_subscriptions(info)
 
-    @permission_required(SubscriptionPermissions.MANAGE_SUBSCRIPTIONS)
     def resolve_draft_subscriptions(self, info, **_kwargs):
         return resolve_draft_subscriptions(info)
 

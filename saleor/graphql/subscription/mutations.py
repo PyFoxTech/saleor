@@ -100,7 +100,7 @@ class SubscriptionCreate(ModelMutation, I18nMixin):
             only_type=ProductVariant
         )
         cleaned_input["quantity"] = data.pop("quantity", None)
-        cleaned_input["status"] = SubscriptionStatus.DRAFT
+        cleaned_input["status"] = SubscriptionStatus.ACTIVE
         return cleaned_input
 
     @staticmethod
@@ -154,7 +154,6 @@ class SubscriptionUpdateInput(graphene.InputObjectType):
             "The mailing address to where the subscription orders will be shipped. "
         )
     )
-    billing_address = AddressInput(description="Billing address of the customer.")
     customer_note = graphene.String(
         description="A note from a customer. Visible by customers in the summary."
     )
@@ -169,14 +168,14 @@ class SubscriptionUpdate(ModelMutation, I18nMixin):
     class Arguments:
         id = graphene.ID(required=True, description="ID of a subscription to update.")
         input = SubscriptionUpdateInput(
-            required=True, description="Fields required to update an subscription."
+            description="Fields required to update an subscription."
         )
 
     class Meta:
         description = "Updates a subscription."
         model = models.Subscription
         exclude = ["upcoming_order_creation_date", "upcoming_delivery_date"]
-        permissions = (SubscriptionPermissions.MANAGE_SUBSCRIPTIONS,)
+        return_field_name = "subscription"
         error_type_class = SubscriptionError
         error_type_field = "subscription_errors"
 
@@ -184,7 +183,6 @@ class SubscriptionUpdate(ModelMutation, I18nMixin):
     def clean_input(cls, info, instance, data):
         cleaned_input = super().clean_input(info, instance, data)
         shipping_address = data.pop("shipping_address", None)
-        billing_address = data.pop("billing_address", None)
         if shipping_address:
             shipping_address = cls.validate_address(
                 shipping_address, instance=instance.shipping_address, info=info
@@ -193,15 +191,6 @@ class SubscriptionUpdate(ModelMutation, I18nMixin):
                 shipping_address, "shipping", user=instance
             )
             cleaned_input["shipping_address"] = shipping_address
-        if billing_address:
-            billing_address = cls.validate_address(
-                billing_address, instance=instance.billing_address, info=info
-            )
-            billing_address = info.context.plugins.change_user_address(
-                billing_address, "billing", user=instance
-            )
-            cleaned_input["billing_address"] = billing_address
-
         rrule = data.pop("rrule", None)
         if rrule and is_valid_rrule(rrule):
             cleaned_input["rrule"] = rrule
@@ -219,10 +208,6 @@ class SubscriptionUpdate(ModelMutation, I18nMixin):
         if shipping_address:
             shipping_address.save()
             instance.shipping_address = shipping_address.get_copy()
-        billing_address = cleaned_input.get("billing_address")
-        if billing_address:
-            billing_address.save()
-            instance.billing_address = billing_address.get_copy()
 
     @classmethod
     def perform_mutation(cls, _root, info, **data):
